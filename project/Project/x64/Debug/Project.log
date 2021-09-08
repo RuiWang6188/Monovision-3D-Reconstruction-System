@@ -1,0 +1,27 @@
+﻿  main_new.cpp
+D:\PCL\PCL 1.11.1\3rdParty\Boost\include\boost-1_74\boost\function_output_iterator.hpp(14): message : This header is deprecated. Use <boost/iterator/function_output_iterator.hpp> instead.
+D:\PCL\PCL 1.11.1\include\pcl-1.11\pcl\visualization\point_cloud_color_handlers.h(612,11): warning C4996: 'pcl::visualization::PointCloudColorHandler<pcl::PCLPointCloud2>::getColor': use getColor() without parameters instead (It will be removed in PCL 1.12)
+D:\PCL\PCL 1.11.1\include\pcl-1.11\pcl\visualization\interactor_style.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+D:\PCL\PCL 1.11.1\include\pcl-1.11\pcl\visualization\pcl_visualizer.h(1606,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+D:\PCL\PCL 1.11.1\include\pcl-1.11\pcl\visualization\point_cloud_color_handlers.h(110,11): warning C4996: 'pcl::visualization::PointCloudColorHandler<PointT>::getColor': use getColor() without parameters instead (It will be removed in PCL 1.12)
+          with
+          [
+              PointT=pcl::PointXYZL
+          ]
+D:\PCL\PCL 1.11.1\include\pcl-1.11\pcl\visualization\point_cloud_color_handlers.h(108): message : 在编译 类 模板 成员函数“vtkSmartPointer<vtkDataArray> pcl::visualization::PointCloudColorHandler<PointT>::getColor(void) const”时
+          with
+          [
+              PointT=pcl::PointXYZL
+          ]
+D:\PCL\PCL 1.11.1\include\pcl-1.11\pcl\visualization\point_cloud_color_handlers.h(121): message : 查看对正在编译的函数 模板 实例化“vtkSmartPointer<vtkDataArray> pcl::visualization::PointCloudColorHandler<PointT>::getColor(void) const”的引用
+          with
+          [
+              PointT=pcl::PointXYZL
+          ]
+D:\PCL\PCL 1.11.1\include\pcl-1.11\pcl\visualization\point_cloud_color_handlers.h(507): message : 查看对正在编译的 类 模板 实例化“pcl::visualization::PointCloudColorHandler<PointT>”的引用
+          with
+          [
+              PointT=pcl::PointXYZL
+          ]
+D:\PCL\PCL 1.11.1\include\pcl-1.11\pcl\visualization\pcl_visualizer.h(906): message : 查看对正在编译的 类 模板 实例化“pcl::visualization::PointCloudColorHandlerLabelField<pcl::PointXYZL>”的引用
+  IAVI Project.vcxproj -> D:\VS_repos\IAVI Project\x64\Debug\IAVI Project.exe
