@@ -21,8 +21,6 @@ void calRealPoint(std::vector<std::vector<cv::Point3f>>& obj, int boardwidth, in
 		for (int colIndex = 0; colIndex < boardwidth; colIndex++)
 		{
 			//	imgpoint.at<Vec3f>(rowIndex, colIndex) = Vec3f(rowIndex * squaresize, colIndex*squaresize, 0); 
-			//7 7 20 3mm?
-			//3,4 => (3*3mm-(7/2*3mm),4*3mm-(7/2*3mm),0)
 			imgpoint.push_back(cv::Point3f((float)colIndex * squaresize - (boardwidth / 2 * squaresize), (float)rowIndex * squaresize - (boardheight / 2 * squaresize), 0));
 		}
 	}
@@ -32,44 +30,44 @@ void calRealPoint(std::vector<std::vector<cv::Point3f>>& obj, int boardwidth, in
 	}
 }
 
-//像素位置、内参、R、T==》世界坐标
+// Convert pixel coordinate to world coordinate
 Point3f getWorldPoints(Point2f& inPoints, Mat& rvec, Mat& tvec, Mat& cameraMatrix)
 {
 	//initialize parameter
-	Mat rotationMatrix;//3*3 
+	Mat rotationMatrix; //3*3 
 	Rodrigues(rvec, rotationMatrix);
-	double zConst = 0;//实际坐标系的距离，若工作平面与相机距离固定可设置为0
+	double zConst = 0;// Since the work space, the laser scanner and the camera is fixed，it can be set to 0
 	double s;
 
-	//获取图像坐标
+	// get pixel coordinate
 	cv::Mat imagePoint = (Mat_<double>(3, 1) << double(inPoints.x), double(inPoints.y), 1);
 	// cv::Mat::ones(3, 1, cv::DataType<double>::type); //u,v,1
 	// imagePoint.at<double>(0, 0) = inPoints.x;
 	// imagePoint.at<double>(1, 0) = inPoints.y;
 
-	//计算比例参数S
+	// mompute scale parameter S
 	cv::Mat tempMat, tempMat2;
 	tempMat = rotationMatrix.inv() * cameraMatrix.inv() * imagePoint;
 	tempMat2 = rotationMatrix.inv() * tvec;
 	s = zConst + tempMat2.at<double>(2, 0);
 	s /= tempMat.at<double>(2, 0);
 
-	//计算世界坐标
+	// compute corresponding world coordinate
 	Mat wcPoint = rotationMatrix.inv() * (s * cameraMatrix.inv() * imagePoint - tvec);
 	Point3f worldPoint(wcPoint.at<double>(0, 0), wcPoint.at<double>(1, 0), wcPoint.at<double>(2, 0));
 	return worldPoint;
 }
 
-//像素位置、内参、R、T==》》相机坐标
+// convert pixel coordinate to camera coordinate
 Point3f getCameraPoints(Point2f& inPoints, Mat& cameraMatrix)
 {
-	//获取图像坐标
+	// get pixel coordinate
 	cv::Mat imagePoint = (Mat_<double>(3, 1) << double(inPoints.x), double(inPoints.y), 1);
 	// cv::Mat::ones(3, 1, cv::DataType<double>::type); //u,v,1
 	// imagePoint.at<double>(0, 0) = inPoints.x;
 	// imagePoint.at<double>(1, 0) = inPoints.y;
 
-	//计算世界坐标
+	// comput corresponding camera coodinate
 	Mat caPoint = cameraMatrix.inv() * imagePoint;
 	Point3f cameraPoint(caPoint.at<double>(0, 0), caPoint.at<double>(1, 0), caPoint.at<double>(2, 0));
 	return cameraPoint;
@@ -116,7 +114,6 @@ void cvFitPlane(const CvMat* points, float* plane) {
 }
 
 cv::Point3f myRotate(cv::Point3f p, cv::Vec6f line, int k) {
-	//自己猜测参数？
 	Mat res = (Mat_<double>(3, 1) << p.x - line[3], p.y - line[4]-0.05, p.z - line[5]);
 	Mat rotationMatrix = (Mat_<double>(3, 3) << 1, 0, 0, 0, cos(k * PI / 160), sin(k * PI / 160), 0, -sin(k * PI / 160), cos(k * PI / 160));
 	res= rotationMatrix * res;
@@ -125,11 +122,10 @@ cv::Point3f myRotate(cv::Point3f p, cv::Vec6f line, int k) {
 }
 
 
-//主函数
 int main()
 {
-	//检测标定板
-	cout << "---------------------Step1:标定-------------------" << endl;
+	// camera calibration
+	cout << "---------------------Step1: Camera Calibration-------------------" << endl;
 	cv::Mat rgbImage, grayImage;
 	std::vector<cv::Point2f> corner;
 	std::vector<std::vector<cv::Point2f>> imagePoint;
@@ -162,11 +158,11 @@ int main()
 		}
 	}
 
-	//标准图用于投影变换
+	//standard graph are used for projection transformations
 	std::vector<std::vector<cv::Point3f>> objRealPoint;
 	calRealPoint(objRealPoint, 8, 6, 20, 3);
 
-	//标定
+	//calibration
 	cv::Mat cameraMatrix, distCoeff;
 	vector<Mat> rvecsMat;
 	vector<Mat> tvecsMat;
@@ -175,10 +171,10 @@ int main()
 
 	
 
-	cout << "---------------------Step2:拟合激光平面-------------------" << endl;
+	cout << "---------------------Step2:Fit Laser Plane-------------------" << endl;
 
 	std::vector<cv::Point3f> Points3d_19;
-	//第19张标定图激光图==》》三维坐标(Z坐标为0)
+	// get the camera coorindate of the 19th laser calibration image 
 	//cameraMatrix, distCoeff, rvecsMat[18], tvecsMat[18]
 	Mat lightline_19 = imread("./img/calib/19-1.bmp", CV_LOAD_IMAGE_GRAYSCALE);
 
@@ -210,7 +206,7 @@ int main()
 	cout << "Point3d_19-1 Find!" << endl;
 
 	std::vector<cv::Point3f> Points3d_20;
-	//第20张标定图激光图==》》三维坐标(Z坐标为0)需要转到19张图坐标系下
+	// the 20th laser calibration image should be converted to the coordinate of the 19th image
 	//cameraMatrix, distCoeff, rvecsMat[19], tvecsMat[19]
 	Mat lightline_20 = imread("./img/calib/20-1.bmp", CV_LOAD_IMAGE_GRAYSCALE);
 
@@ -239,94 +235,43 @@ int main()
 
 	cout << "Point3d_20-1 Find!" << endl;
 
-	//拟合激光平面
+	// get the laser plane
 
-	//点云1
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>); // 创建点云（指针）
+	// point cloud of laser plane
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>); 
 	(*cloud).points.resize(Points3d_19.size() + Points3d_20.size());
 
 
-	CvMat* points_mat = cvCreateMat(Points3d_19.size() + Points3d_20.size(), 3, CV_32FC1);//定义用来存储需要拟合点的矩阵 
+	CvMat* points_mat = cvCreateMat(Points3d_19.size() + Points3d_20.size(), 3, CV_32FC1); // the matrix is used to store the points to be fitted 
 	for (int i = 0; i < Points3d_19.size(); ++i)
 	{
 		(*cloud).points[i].x = Points3d_19[i].x;
 		(*cloud).points[i].y = Points3d_19[i].y;
 		(*cloud).points[i].z = Points3d_19[i].z;
-		points_mat->data.fl[i * 3 + 0] = Points3d_19[i].x;//矩阵的值进行初始化   X的坐标值
-		points_mat->data.fl[i * 3 + 1] = Points3d_19[i].y;//  Y的坐标值
-		points_mat->data.fl[i * 3 + 2] = Points3d_19[i].z;//  Z的坐标值</span>
+		points_mat->data.fl[i * 3 + 0] = Points3d_19[i].x;
+		points_mat->data.fl[i * 3 + 1] = Points3d_19[i].y;
+		points_mat->data.fl[i * 3 + 2] = Points3d_19[i].z;
 	}
 	for (int i = 0; i < Points3d_20.size(); ++i)
 	{
 		(*cloud).points[i + Points3d_19.size()].x = Points3d_20[i].x;
 		(*cloud).points[i + Points3d_19.size()].y = Points3d_20[i].y;
 		(*cloud).points[i + Points3d_19.size()].z = Points3d_20[i].z;
-		points_mat->data.fl[Points3d_19.size() * 3 + i * 3 + 0] = Points3d_20[i].x;//矩阵的值进行初始化   X的坐标值
-		points_mat->data.fl[Points3d_19.size() * 3 + i * 3 + 1] = Points3d_20[i].y;//  Y的坐标值
-		points_mat->data.fl[Points3d_19.size() * 3 + i * 3 + 2] = Points3d_20[i].z;//  Z的坐标值</span>
+		points_mat->data.fl[Points3d_19.size() * 3 + i * 3 + 0] = Points3d_20[i].x;
+		points_mat->data.fl[Points3d_19.size() * 3 + i * 3 + 1] = Points3d_20[i].y;
+		points_mat->data.fl[Points3d_19.size() * 3 + i * 3 + 2] = Points3d_20[i].z;
 	}
 
 
 	cout << "points_mat: " << points_mat->rows << " * " << points_mat->cols << endl;
 
 
-	float line_plane[4] = { 0 };//定义用来储存平面参数的数组 
-	cvFitPlane(points_mat, line_plane);//拟合平面方程 
+	float line_plane[4] = { 0 };	// the parameter of the plane equation
+	cvFitPlane(points_mat, line_plane);	// fit plane 
 
 	cout << "Plane Done!:	" << line_plane[0] << "x + " << line_plane[1] << "y + " << line_plane[2] << "z = " << line_plane[3] << endl;
 
-
-
-	//cout << "---------------------Step3:确定履带位移-------------------" << endl;		//转盘未用到该模块
-	//确定履带位移：根据内参+像素点 => 计算RT
-	/*std::vector<cv::Point2f> corner_1, corner_20;
-
-	Mat caltab_at_position_1 = imread("D:/Class/Level_Four/IVIA/Experiment/project/image/img5/calib-speed/Basler_daA2500-14uc__40031429__20201109_195140195_44.bmp", CV_LOAD_IMAGE_GRAYSCALE);
-	bool isFind_1 = findCirclesGrid(caltab_at_position_1, cv::Size(7, 7), corner_1); 
-	//drawChessboardCorners(caltab_at_position_1, cv::Size(7, 7), corner_1, isFind_1);
-
-	Mat caltab_at_position_20 = imread("D:/Class/Level_Four/IVIA/Experiment/project/image/img5/calib-speed/Basler_daA2500-14uc__40031429__20201109_195140195_63.bmp", CV_LOAD_IMAGE_GRAYSCALE);
-	bool isFind_20 = findCirclesGrid(caltab_at_position_20, cv::Size(7, 7), corner_20);
-	//drawChessboardCorners(caltab_at_position_20, cv::Size(7, 7), corner_20, isFind_20);
-
-	/*std::vector<std::vector<cv::Point3f>> objRealPoint2;
-	calRealPoint(objRealPoint2, 7, 7, 2, 3);
-	std::vector<std::vector<cv::Point2f>> imagePoint2;
-	imagePoint2.push_back(corner_1);
-	imagePoint2.push_back(corner_20);
-
-	vector<Mat> rvecsMat2;
-	rvecsMat2.resize(2);
-	vector<Mat> tvecsMat2;
-	tvecsMat2.resize(2);
-	solvePnP(objRealPoint2[0], imagePoint2[0], cameraMatrix, distCoeff, rvecsMat2[0], tvecsMat2[0], false, SOLVEPNP_DLS);
-	solvePnP(objRealPoint2[1], imagePoint2[1], cameraMatrix, distCoeff, rvecsMat2[1], tvecsMat2[1], false, SOLVEPNP_DLS);
-
-	Mat Point3d_mat = (Mat_<double>(3, 1) << 0.0, 0.0, 0.0);
-	Mat rotationMatrix1;//3*3
-	Rodrigues(rvecsMat2[0], rotationMatrix1);
-	Mat rotationMatrix20;//3*3
-	Rodrigues(rvecsMat2[1], rotationMatrix20);
-	Mat rotationMatrix19;//3*3
-	Rodrigues(rvecsMat[18], rotationMatrix19);//标杆
-
-	Mat Point3d_1to19_mat = rotationMatrix19 * rotationMatrix1.inv() * (Point3d_mat - tvecsMat2[0]) + tvecsMat[18];
-	Mat Point3d_20to19_mat = rotationMatrix19 * rotationMatrix20.inv() * (Point3d_mat - tvecsMat2[1]) + tvecsMat[18];
-	
-	cv::Point3f c1 = getCameraPoints(corner_1[0], cameraMatrix);
-	Mat Point3d_1 = (Mat_<double>(3, 1) << c1.x, c1.y, c1.z); 
-	cv::Point3f c20 = getCameraPoints(corner_20[0], cameraMatrix);
-	Mat Point3d_20 = (Mat_<double>(3, 1) << c20.x, c20.y, c20.z);
-	
-	Mat move_steps = Point3d_20 - Point3d_1;//1-20移动距离
-	Mat move_step = move_steps / 19;//单步移动距离
-
-	Mat move_step = (Mat_<double>(3, 1) << line_plane[0], line_plane[1], line_plane[2]) / 800;
-	cout << "Move_step compute success!" << endl;
-	cout << "move_step: " << move_step << endl;
-	*/
-
-	cout << "---------------------Step3:计算转盘中心轴-------------------" << endl;
+	cout << "---------------------Step3: Compute Rotation Axis-------------------" << endl;
 
 	Mat center = imread("./img/calib/center.bmp", CV_LOAD_IMAGE_GRAYSCALE);
 
@@ -354,9 +299,9 @@ int main()
 	cv::fitLine(centerPoint_all, centerLine, cv::DIST_L2, 0, 0.01, 0.01);
 	
 
-	cout << "---------------------Step4:计算物体点云-------------------" << endl;
+	cout << "---------------------Step4: Compute and Merge Point Cloud-------------------" << endl;
 
-	//计算
+	// Computation
 	std::vector<cv::Point3f> Points3d_all;
 	for (size_t k = 1; k <= 320; k++)
 	{
@@ -400,7 +345,7 @@ int main()
 	}
 	cout << "Point cloud computation is done!" << endl;
 
-	//显示
+	//Display
 	//pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>); // 创建点云（指针）
 	int size = (*cloud).points.size();
 	(*cloud).points.resize(size+Points3d_all.size()+100);
